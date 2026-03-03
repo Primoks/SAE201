@@ -1,0 +1,64 @@
+! --- Paramètres de base et Nommage ---
+enable
+configure terminal
+hostname SW-21-3
+
+! --- Création des VLANs (Indispensable pour qu'il les reconnaisse) ---
+vlan 50
+ name VLAN_Natif
+vlan 211
+ name vlan211
+vlan 212
+ name vlan212
+vlan 219
+ name vlan219
+exit
+
+! --- Configuration de l'IP de Management ---
+! IP spécifique au switch 3 (la .253 comme prévu)
+interface vlan 219
+ ip address 192.168.21.253 255.255.255.192
+ no shutdown
+ exit
+
+! --- Passerelle par défaut ---
+! Indispensable pour être administré depuis un autre VLAN (le .254 du SW1)
+ip default-gateway 192.168.21.254
+
+! --- Sécurisation de l'accès Telnet (VLAN Admin uniquement) ---
+enable password bonjour
+access-list 10 permit 192.168.21.192 0.0.0.63
+line vty 0 15
+ access-class 10 in
+ password bonjour
+ login
+ exit
+
+! --- Configuration des 2 ports Trunk (Vers SW1 et vers SW2) ---
+! On garde les mêmes ports Fa0/23-24 pour la symétrie du triangle
+interface range Gi0/23 - 24
+ switchport mode trunk
+ switchport trunk native vlan 50
+ switchport trunk allowed vlan 211,212,219
+ no shutdown
+ exit
+
+! --- Configuration du port d'accès pour Linux 2 (VLAN B) ---
+interface Gi0/1
+ switchport mode access
+ switchport access vlan 212
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! --- Configuration du port d'accès pour Windows 2 (VLAN A) ---
+interface Gi0/2
+ switchport mode access
+ switchport access vlan 211
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! --- Sauvegarde finale ---
+end
+copy running-config startup-config

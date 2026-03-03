@@ -1,0 +1,90 @@
+! --- Paramètres de base et Nommage ---
+enable
+configure terminal
+hostname SW-21-1
+
+! --- Création des VLANs du Groupe 2.1 ---
+vlan 50
+ name VLAN_Natif
+vlan 211
+ name vlan211
+vlan 212
+ name vlan212
+vlan 215
+ name vlan215
+vlan 219
+ name vlan219
+exit
+
+! --- Configuration du Spanning-Tree (Root Bridge) ---
+! Force ce switch à être le commutateur racine dans tous les vlans
+spanning-tree vlan 1-4094 priority 0
+
+! --- Activation du Routage de Niveau 3 ---
+ip routing
+
+! --- Configuration des interfaces VLAN (SVIs - Passerelles) ---
+interface vlan 211
+ ip address 192.168.21.62 255.255.255.192
+ no shutdown
+ exit
+
+interface vlan 212
+ ip address 192.168.21.126 255.255.255.192
+ no shutdown
+ exit
+
+interface vlan 215
+ ip address 192.168.21.190 255.255.255.192
+ no shutdown
+ exit
+
+interface vlan 219
+ ip address 192.168.21.254 255.255.255.192
+ no shutdown
+ exit
+
+! --- Route par défaut vers l'extérieur (Internet) ---
+! L'adresse .129 correspond à l'interface de R_Internet dans le VLAN 215
+ip route 0.0.0.0 0.0.0.0 192.168.21.129
+
+! --- Sécurisation de l'accès Telnet (Autorise tout le VLAN Admin) ---
+enable password bonjour
+access-list 10 permit 192.168.21.192 0.0.0.63
+line vty 0 15
+ access-class 10 in
+ password bonjour
+ login
+ exit
+
+! --- Configuration du port Trunk vers le Switch Central ---
+interface GigabitEthernet0/10
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 50
+ ! N'autoriser que les Vlan d'admin et d'interco vers le Switch Central
+ switchport trunk allowed vlan 215,219
+ no shutdown
+ exit
+
+! --- Configuration des ports Trunk internes vers Switch 2 et Switch 3 ---
+interface range Gi0/7 - 8
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 50
+ ! Autorise uniquement les Vlan A, B et Admin en interne
+ switchport trunk allowed vlan 211,212,219
+ no shutdown
+ exit
+
+! --- Configuration du port d'accès pour admin kali (VLAN admin) ---
+interface Gi0/1
+ switchport mode access
+ switchport access vlan 219
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! --- Sauvegarde de la configuration ---
+end
+copy running-config startup-config

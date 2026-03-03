@@ -1,0 +1,62 @@
+! --- Paramètres de base et Nommage ---
+enable
+configure terminal
+hostname SW-21-2
+
+! --- Création des VLANs du groupe 2.1 ---
+vlan 50
+ name VLAN_Natif
+vlan 211
+ name vlan211
+vlan 212
+ name vlan212
+vlan 219
+ name vlan219
+exit
+
+! --- Configuration de l'IP de Management ---
+! IP choisie pour le management du switch 2 dans le VLAN Admin
+interface vlan 219
+ ip address 192.168.21.252 255.255.255.192
+ no shutdown
+ exit
+
+! --- Passerelle par défaut (Dernière IP du VLAN Admin) ---
+ip default-gateway 192.168.21.254
+
+! --- Sécurisation de l'accès Telnet (VLAN Admin uniquement) ---
+access-list 10 permit 192.168.21.192 0.0.0.63
+enable password bonjour
+line vty 0 15
+ access-class 10 in
+ password bonjour
+ login
+ exit
+
+! --- Configuration des 2 ports Trunk (Vers SW1 et vers SW3) ---
+interface range Gi0/23 - 24
+ switchport mode trunk
+ switchport trunk native vlan 50
+ switchport trunk allowed vlan 211,212,219
+ no shutdown
+ exit
+
+! --- Configuration du port d'accès pour Linux 1 (VLAN A) ---
+interface Gi0/1
+ switchport mode access
+ switchport access vlan 211
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! --- Configuration du port d'accès pour Windows 1 (VLAN B) ---
+interface Gi0/2
+ switchport mode access
+ switchport access vlan 212
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! --- Sauvegarde de la configuration ---
+end
+copy running-config startup-config
