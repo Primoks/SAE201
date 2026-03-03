@@ -1,0 +1,46 @@
+! --- Création des VLANs indispensables ---
+vlan 50
+ name VLAN_Natif
+vlan 215
+ name Interco_Groupe_2.1
+vlan 219
+ name Admin_Groupe_2.1
+vlan 1000
+ name Services_Communs
+exit
+
+! --- Configuration de l'IP de Management (pour le Telnet) ---
+! On lui donne une IP dans ton VLAN Admin pour pouvoir le piloter
+interface vlan 219
+ ip address 192.168.21.251 255.255.255.192
+ no shutdown
+ exit
+
+
+! --- Sécurisation de l'accès Telnet (VLAN Admin uniquement) ---
+enable password bonjour
+access-list 10 permit 192.168.21.192 0.0.0.63
+line vty 0 15
+ access-class 10 in
+ password bonjour
+ login
+ exit
+
+! --- Configuration du port vers TON Switch 1 (SW-21-1) ---
+interface Gi0/21
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk native vlan 50
+ switchport trunk allowed vlan 215,219
+ no shutdown
+ exit
+
+! --- Configuration du port vers le Routeur R_Internet ---
+interface Gi0/1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switcport nonegotiate
+ switchport trunk native vlan 50
+ switchport trunk allowed vlan 215,219,1000
+ no shutdown
+ exit
