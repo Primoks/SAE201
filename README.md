@@ -37,8 +37,7 @@ L'objectif est de répondre aux besoins de **commutation**, de **routage**, de *
 
 ## 📁 Structure du Dépôt
 * `/Rapports` : Documentation technique et bilans de gestion de projet.
-* `/Configs` : Extraits des configurations des équipements (Cisco, Linux).
-* `/Scripts` : (Optionnel) Scripts de configuration ou d'automatisation.
+* `/Config` : Extraits des configurations des équipements (Cisco, Linux).
 
 ---
 *Projet réalisé en équipe de 3 personnes au département R&T de Saint-Malo.*
